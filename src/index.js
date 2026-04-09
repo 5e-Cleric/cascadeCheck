@@ -8,8 +8,8 @@ const test = `.page {
     color: white !important;
 }
 `;
-
-import cssData from "mdn-data/css/properties.json";
+const res = await fetch("https://raw.githubusercontent.com/w3c/webref/master/data/css/properties.json");
+const cssData = await res.json();
 const properties = Object.keys(cssData);
 
 function lint(input, settings) {
