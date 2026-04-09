@@ -23,7 +23,7 @@ function lint(input, settings) {
 		const prop = match[1];
 		if (!properties.includes(prop)) {
 			console.log(`Invalid property: ${prop}`);
-			issues.push({ position: { line: i + 1 , from: match.indices[1][0], to: match.indices[1][1]}, message: `!important can be problematic`, severity: "low" });
+			issues.push({ position: { line: i + 1 , from: match.indices[1][0], to: match.indices[1][1]}, message: `wrong property`, severity: "medium" });
 		}
 	});
 
@@ -46,7 +46,7 @@ function lint(input, settings) {
 			issues.push({
 				position: { line: i + 1 },
 				message: `CSS rule missing semicolon`,
-				severity: "low",
+				severity: "high",
 			});
 
 		// CSS rules missing a value but have colon
