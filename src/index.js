@@ -8,9 +8,9 @@ const test = `.page {
     color: white !important;
 }
 `;
-const res = await fetch("https://raw.githubusercontent.com/w3c/webref/master/data/css/properties.json");
+const res = await fetch("https://cdn.jsdelivr.net/npm/@webref/css@latest/css.json");
 const cssData = await res.json();
-const properties = Object.keys(cssData);
+const properties = cssData.properties.map(p => p.name);
 
 function lint(input, settings) {
 	let issues = [];
