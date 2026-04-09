@@ -1,5 +1,9 @@
 {
 	"name": "cascade-check",
 	"version": "1.0.0",
-	"type": "module"
+	"type": "module",
+	"main": "src/index.js",
+	"scripts": {
+		"start": "node src/index.js"
+	}
 }

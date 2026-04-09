@@ -1,5 +1,5 @@
-const test = `
-.page {
+const test = 
+`.page {
     color:red !important !important;
     background:red
     font-size:10px
@@ -49,9 +49,7 @@ function lint(input, settings) {
 
 	findImportant(input);
 
-	console.log(issues);
-
 	return issues;
 }
 
-lint(test);
+export default lint;
