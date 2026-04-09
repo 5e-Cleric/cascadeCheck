@@ -1,0 +1,22 @@
+# Node modules
+node_modules/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Temporary files
+*.tmp
+*.temp
+
+# IDE/editor configs
+.vscode/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# npm package lock
+package-lock.json
