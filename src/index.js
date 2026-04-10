@@ -1,4 +1,10 @@
-const test = `.page {
+const test = `
+@font-face {
+  font-family: "Modesto";
+  src: url(https://raw.githack.com/5e-Cleric/fonts-/main/D&D%205e/Modesto/Modesto%20Caps%20Condensed%20Bold.ttf);
+}
+
+.page {
     background-image: linear-gradient(
         0deg,
         red 0%,
@@ -16,7 +22,7 @@ const test = `.page {
 const res = await fetch("https://cdn.jsdelivr.net/npm/@webref/css@latest/css.json");
 const cssData = await res.json();
 const properties = cssData.properties.map((p) => p.name);
-const atrules = cssData.atrules.map((a)=> a.name);
+const atrules = cssData.atrules.map((a) => a.name);
 
 function parseCSS(input) {
 	const lines = input.split("\n");
@@ -115,9 +121,22 @@ function lint(input, settings) {
 	console.dir(blocks, { depth: null });
 
 	for (const block of blocks) {
+		let validProperties = [];
+		const selector = block.selector;
+		if (selector.startsWith("@")) {
+			const atRuleName = selector.slice(1).split(" ")[0];
+
+			if (atrules.includes(atRuleName)) {
+				validProperties =
+					cssData.atrules.find((a) => a.name === atRuleName)?.descriptors.map((d) => d.name) || [];
+			}
+		} else {
+			validProperties = properties;
+		}
+
 		for (const decl of block.declarations) {
 			// invalid property check
-			if (!properties.includes(decl.prop)) {
+			if (!decl.prop.startsWith("--") && !validProperties.includes(decl.prop)) {
 				issues.push({
 					position: decl.loc,
 					message: "wrong property",
