@@ -1,4 +1,9 @@
 const test = `.page {
+    background-image: linear-gradient(
+        0deg,
+        red 0%,
+        blue 2px,
+    );
     colora:red !important !important;
     background:red
     font-size:10px
@@ -10,55 +15,149 @@ const test = `.page {
 `;
 const res = await fetch("https://cdn.jsdelivr.net/npm/@webref/css@latest/css.json");
 const cssData = await res.json();
-const properties = cssData.properties.map(p => p.name);
-//console.log(properties);
+const properties = cssData.properties.map((p) => p.name);
+const atrules = cssData.atrules.map((a)=> a.name);
+
+function parseCSS(input) {
+	const lines = input.split("\n");
+
+	const blocks = [];
+	let selector = null;
+	let declarations = [];
+
+	let buffer = "";
+	let startOffset = 0;
+	let startLine = 0;
+	let startCol = 0;
+
+	let offset = 0;
+	let parenDepth = 0;
+
+	for (let i = 0; i < lines.length; i++) {
+		const line = lines[i] + "\n";
+
+		const trimmed = lines[i].trim();
+
+		// selector start
+		if (trimmed.endsWith("{")) {
+			selector = trimmed.slice(0, -1).trim();
+			declarations = [];
+			offset += line.length;
+			continue;
+		}
+
+		// block end
+		if (trimmed === "}") {
+			if (selector) blocks.push({ selector, declarations });
+			selector = null;
+			offset += line.length;
+			continue;
+		}
+
+		if (!selector) {
+			offset += line.length;
+			continue;
+		}
+
+		// start declaration
+		if (!buffer && line.includes(":")) {
+			buffer = lines[i].trim();
+
+			startOffset = offset + lines[i].indexOf(":") - 0;
+			startLine = i + 1;
+			startCol = lines[i].indexOf(":") + 1;
+		} else if (buffer) {
+			buffer += " " + trimmed;
+		}
+
+		// track parentheses
+		for (const ch of lines[i]) {
+			if (ch === "(") parenDepth++;
+			if (ch === ")") parenDepth--;
+		}
+
+		// end declaration
+		if (buffer && parenDepth === 0 && buffer.includes(";")) {
+			const match = buffer.match(/^\s*([\w-]+)\s*:\s*(.+?)\s*;$/);
+
+			if (match) {
+				const prop = match[1];
+
+				const propStart = lines[i].indexOf(prop);
+				const propEnd = propStart + prop.length;
+
+				declarations.push({
+					prop,
+					value: match[2],
+					line: startLine,
+					loc: {
+						line: startLine,
+						column: startCol,
+						startOffset,
+						endOffset: offset + lines[i].length,
+					},
+				});
+			}
+
+			buffer = "";
+		}
+
+		offset += line.length;
+	}
+
+	return blocks;
+}
 
 function lint(input, settings) {
 	let issues = [];
 
-	const lines = input.split("\n");
+	const blocks = parseCSS(input);
+	console.dir(blocks, { depth: null });
 
-	lines.forEach((line, i) => {
-		const match = line.match(/^\s*([\w-]+)\s*:/d);
-		if (!match) return; // not a property line
-		const prop = match[1];
-		if (!properties.includes(prop)) {
-			issues.push({ position: { line: i + 1 , from: match.indices[1][0], to: match.indices[1][1]}, message: `wrong property`, severity: "medium" });
-		}
-	});
-
-	lines.forEach((line, i) => {
-		// Detect any !important
-		if (/!important/.test(line))
-			issues.push({ position: { line: i + 1 }, message: `!important can be problematic`, severity: "low" });
-
-		// Detect multiple !important in the same line
-		/*
-			if (/!important.*!important/.test(line))
+	for (const block of blocks) {
+		for (const decl of block.declarations) {
+			// invalid property check
+			if (!properties.includes(decl.prop)) {
 				issues.push({
-					position: { line: i + 1 },
-					message: `don't use !important multiple times!`,
+					position: decl.loc,
+					message: "wrong property",
+					severity: "medium",
+				});
+			}
+
+			// !important check
+			if (decl.value.includes("!important")) {
+				issues.push({
+					position: decl.loc,
+					message: "!important can be problematic",
 					severity: "low",
 				});
-			*/
-		// CSS rules missing a colon (not last line before closing })
-		if (/^\s*[\w-]+\s*:[^;}\n]*$/.test(line))
-			issues.push({
-				position: { line: i + 1 },
-				message: `CSS rule missing semicolon`,
-				severity: "high",
-			});
+			}
 
-		// CSS rules missing a value but have colon
-		if (/^\s*[\w-]+\s*:\s*(?=;?$)/.test(line))
-			issues.push({
-				position: { line: i + 1 },
-				message: `CSS rule missing value`,
-				severity: "low",
-			});
-	});
+			// missing value check
+			if (!decl.value || decl.value.trim() === "") {
+				issues.push({
+					position: decl.loc,
+					message: "CSS rule missing value",
+					severity: "low",
+				});
+			}
 
+			// multiple !important
+			if ((decl.value.match(/!important/g) || []).length > 1) {
+				issues.push({
+					position: decl.loc,
+					message: "multiple !important detected",
+					severity: "low",
+				});
+			}
+		}
+	}
+
+	console.log("issues:\n", issues);
 	return issues;
-};
+}
+
+lint(test);
 
 export default lint;
