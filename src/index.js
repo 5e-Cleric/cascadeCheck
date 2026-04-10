@@ -1,5 +1,5 @@
 const test = `.page {
-    color:red !important !important;
+    colora:red !important !important;
     background:red
     font-size:10px
 }
@@ -11,6 +11,7 @@ const test = `.page {
 const res = await fetch("https://cdn.jsdelivr.net/npm/@webref/css@latest/css.json");
 const cssData = await res.json();
 const properties = cssData.properties.map(p => p.name);
+//console.log(properties);
 
 function lint(input, settings) {
 	let issues = [];
@@ -22,7 +23,6 @@ function lint(input, settings) {
 		if (!match) return; // not a property line
 		const prop = match[1];
 		if (!properties.includes(prop)) {
-			console.log(`Invalid property: ${prop}`);
 			issues.push({ position: { line: i + 1 , from: match.indices[1][0], to: match.indices[1][1]}, message: `wrong property`, severity: "medium" });
 		}
 	});
@@ -58,9 +58,7 @@ function lint(input, settings) {
 			});
 	});
 
-	findImportant(input);
-
 	return issues;
-}
+};
 
 export default lint;
