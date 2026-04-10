@@ -199,7 +199,7 @@ const test = `
   }
 
   .event {
-    container-style: normal;
+    container-type: normal;
 
     margin: 0;
     position: absolute;
@@ -761,14 +761,10 @@ function lintBlocks(blocks, issues) {
 
 		for (const decl of block.declarations) {
 			// invalid property check (ignore custom props)
-			if (
-				validProperties &&
-				!decl.prop.startsWith("--") &&
-				!validProperties.includes(decl.prop)
-			) {
+			if (validProperties && !decl.prop.startsWith("--") && !validProperties.includes(decl.prop)) {
 				issues.push({
 					position: decl.loc,
-					message: "wrong property",
+					message: `unknown property: '${decl.prop}'`,
 					severity: "medium",
 				});
 			}
@@ -786,16 +782,7 @@ function lintBlocks(blocks, issues) {
 			if (!decl.value || decl.value.trim() === "") {
 				issues.push({
 					position: decl.loc,
-					message: "CSS rule missing value",
-					severity: "low",
-				});
-			}
-
-			// multiple !important
-			if ((decl.value.match(/!important/g) || []).length > 1) {
-				issues.push({
-					position: decl.loc,
-					message: "multiple !important detected",
+					message: "missing value",
 					severity: "low",
 				});
 			}
@@ -817,7 +804,5 @@ function lint(input) {
 
 	return issues;
 }
-
-lint(test);
 
 export default lint;
